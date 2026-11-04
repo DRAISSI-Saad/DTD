@@ -1,8 +1,25 @@
-const STORAGE_KEY = 'tdt_portfolio_demo_data_v2';
+const STORAGE_KEY = 'tdt_portfolio_demo_data_v4';
 
 function localDate(offset = 0) {
   const date = new Date();
   date.setDate(date.getDate() + offset);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+function previousMonthRange() {
+  const current = new Date();
+  const firstOfCurrentMonth = new Date(current.getFullYear(), current.getMonth(), 1, 12);
+  const lastOfPreviousMonth = new Date(firstOfCurrentMonth);
+  lastOfPreviousMonth.setDate(0);
+  const firstOfPreviousMonth = new Date(lastOfPreviousMonth.getFullYear(), lastOfPreviousMonth.getMonth(), 1, 12);
+  const format = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  return { start: format(firstOfPreviousMonth), end: format(lastOfPreviousMonth) };
+}
+
+function previousMonthDate(day) {
+  const { start } = previousMonthRange();
+  const date = new Date(`${start}T12:00:00`);
+  date.setDate(day);
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }
 
@@ -34,6 +51,38 @@ function createInitialData() {
     { id: 2, plan_date: localDate(-1), objective_1: 'Réviser les classes et l’héritage', objective_2: 'Faire des exercices SQL', objective_3: null, evening_review: '' },
     { id: 3, plan_date: localDate(1), objective_1: 'Terminer les exercices d’algorithmique', objective_2: 'Revoir les erreurs du carnet', objective_3: 'Préparer une visualisation de données', evening_review: '' }
   ];
+  const dailyReviews = [
+    'Séance productive : les exercices ont aidé à clarifier les notions principales.',
+    'Bonne progression. Quelques erreurs restent à reprendre avec des exemples simples.',
+    'La pratique a été utile ; prévoir une courte révision active demain.',
+    'Objectifs principaux atteints. Revoir les points difficiles avant de passer au chapitre suivant.',
+    'Journée équilibrée entre cours, exercices et correction des erreurs.'
+  ];
+  const studyTopics = [
+    'Revoir les notions essentielles',
+    'Faire des exercices d’application',
+    'Corriger une série de problèmes',
+    'Préparer une fiche de synthèse',
+    'Reprendre les erreurs de la séance précédente'
+  ];
+  let nextPlanId = 4;
+  const previousMonth = previousMonthRange();
+  for (let date = new Date(`${previousMonth.start}T12:00:00`); date <= new Date(`${previousMonth.end}T12:00:00`); date.setDate(date.getDate() + 1)) {
+    if (date.getDay() === 0 || (date.getDate() % 9 === 0)) continue;
+    const planDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    const index = date.getDate();
+    const firstChapter = chapters[index % chapters.length];
+    const secondChapter = chapters[(index + 3) % chapters.length];
+    plans.push({
+      id: nextPlanId++,
+      plan_date: planDate,
+      objective_1: `${studyTopics[index % studyTopics.length]} : ${firstChapter.title}`,
+      objective_2: `${studyTopics[(index + 1) % studyTopics.length]} : ${secondChapter.title}`,
+      objective_3: index % 2 ? 'Consolider les acquis du module' : null,
+      evening_review: dailyReviews[index % dailyReviews.length]
+    });
+  }
+  plans[1].evening_review = dailyReviews[1];
   const blocks = [
     { id: 1, plan_id: 1, chapter_id: 1, start_time: '09:00:00', end_time: '09:50:00', block_type: 'cours', status: 'fait', notes: 'Revoir les règles et les exemples clés.' },
     { id: 2, plan_id: 1, chapter_id: 1, start_time: '09:50:00', end_time: '10:00:00', block_type: 'pause', status: 'prevu', notes: 'Pause de 10 minutes' },
@@ -47,10 +96,30 @@ function createInitialData() {
     { id: 10, plan_id: 2, chapter_id: 4, start_time: '14:00:00', end_time: '14:50:00', block_type: 'exercice', status: 'fait', notes: 'Série de requêtes SQL corrigées.' },
     { id: 11, plan_id: 2, chapter_id: 5, start_time: '16:00:00', end_time: '16:50:00', block_type: 'fiche', status: 'saute', notes: 'Fiche de révision sur Git et les tests.' }
   ];
+  let nextBlockId = 12;
+  for (const plan of plans) {
+    if (plan.id <= 3) continue;
+    const index = new Date(`${plan.plan_date}T12:00:00`).getDate();
+    const firstChapter = chapters[index % chapters.length];
+    const secondChapter = chapters[(index + 3) % chapters.length];
+    const completionPattern = index % 4;
+    const statusFor = (position) => (
+      completionPattern === 0 && position === 2 ? 'saute' : position < (completionPattern === 1 ? 2 : 3) ? 'fait' : 'saute'
+    );
+    blocks.push(
+      { id: nextBlockId++, plan_id: plan.id, chapter_id: firstChapter.id, start_time: '09:00:00', end_time: '09:50:00', block_type: 'cours', status: 'fait', notes: 'Révision des notions et des exemples.' },
+      { id: nextBlockId++, plan_id: plan.id, chapter_id: firstChapter.id, start_time: '10:00:00', end_time: '10:50:00', block_type: 'exercice', status: statusFor(1), notes: 'Exercices d’application.' },
+      { id: nextBlockId++, plan_id: plan.id, chapter_id: secondChapter.id, start_time: '14:00:00', end_time: '14:50:00', block_type: 'annale', status: statusFor(2), notes: 'Mise en pratique et correction.' }
+    );
+  }
   const errors = [
-    { id: 1, chapter_id: 1, error_description: 'Oubli de traiter le cas d’une collection vide dans un algorithme.', correction: 'Lister les cas limites avant de coder : entrée vide, un élément et doublons.', review_count: 0, next_review_date: localDate(), created_at: new Date().toISOString() },
-    { id: 2, chapter_id: 8, error_description: 'Interprétation incorrecte de la moyenne en présence de valeurs extrêmes.', correction: 'Comparer moyenne et médiane, puis examiner la dispersion et les valeurs atypiques.', review_count: 1, next_review_date: localDate(2), created_at: new Date().toISOString() },
-    { id: 3, chapter_id: 9, error_description: 'Graphique difficile à lire à cause d’axes et d’unités manquants.', correction: 'Ajouter un titre, des libellés, les unités et choisir une échelle adaptée.', review_count: 2, next_review_date: localDate(-1), created_at: new Date().toISOString() }
+    { id: 1, chapter_id: 1, error_description: 'Oubli de traiter le cas d’une collection vide dans un algorithme.', correction: 'Lister les cas limites avant de coder : entrée vide, un élément et doublons.', review_count: 0, next_review_date: localDate(), created_at: `${previousMonthDate(3)}T10:00:00.000Z` },
+    { id: 2, chapter_id: 8, error_description: 'Interprétation incorrecte de la moyenne en présence de valeurs extrêmes.', correction: 'Comparer moyenne et médiane, puis examiner la dispersion et les valeurs atypiques.', review_count: 1, next_review_date: localDate(2), created_at: `${previousMonthDate(7)}T11:30:00.000Z` },
+    { id: 3, chapter_id: 9, error_description: 'Graphique difficile à lire à cause d’axes et d’unités manquants.', correction: 'Ajouter un titre, des libellés, les unités et choisir une échelle adaptée.', review_count: 2, next_review_date: localDate(-1), created_at: `${previousMonthDate(12)}T15:00:00.000Z` },
+    { id: 4, chapter_id: 2, error_description: 'Confusion entre surcharge et redéfinition de méthode.', correction: 'Comparer la signature et vérifier si la méthode est héritée de la classe mère.', review_count: 1, next_review_date: localDate(-2), created_at: `${previousMonthDate(17)}T09:30:00.000Z` },
+    { id: 5, chapter_id: 4, error_description: 'Requête SQL qui duplique les lignes après une jointure.', correction: 'Vérifier la cardinalité des relations et les clés utilisées dans la jointure.', review_count: 2, next_review_date: localDate(1), created_at: `${previousMonthDate(21)}T13:00:00.000Z` },
+    { id: 6, chapter_id: 5, error_description: 'Test automatisé dépendant de l’ordre d’exécution.', correction: 'Isoler les données et rendre chaque test indépendant.', review_count: 0, next_review_date: localDate(-3), created_at: `${previousMonthDate(25)}T16:00:00.000Z` },
+    { id: 7, chapter_id: 7, error_description: 'Erreur de dimensions lors d’un produit matriciel.', correction: 'Contrôler le nombre de colonnes de la première matrice et de lignes de la seconde.', review_count: 0, next_review_date: localDate(1), created_at: `${previousMonthDate(28)}T10:45:00.000Z` }
   ];
   return { exams, chapters, plans, blocks, errors };
 }
@@ -58,7 +127,16 @@ function createInitialData() {
 function getData() {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) return JSON.parse(saved);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        const initial = createInitialData();
+        return Object.fromEntries(
+          Object.keys(initial).map((key) => [key, Array.isArray(parsed[key]) ? parsed[key] : initial[key]])
+        );
+      }
+      throw new Error('Le stockage local ne contient pas un jeu de données valide.');
+    }
   } catch (error) {
     console.error('Impossible de lire les données de démonstration locales.', error);
   }
@@ -186,9 +264,16 @@ export async function demoApi(path, options = {}) {
   }
 
   const collection = pathname.replace(/^\//, '').replaceAll('-', '_');
-  const supported = ['exams', 'chapters', 'daily_plans', 'study_blocks', 'error_notebook'];
-  if (!supported.includes(collection)) throw new Error(`Route de démonstration non reconnue : ${pathname}`);
-  const records = data[collection];
+  const collectionKeys = {
+    exams: 'exams',
+    chapters: 'chapters',
+    daily_plans: 'plans',
+    study_blocks: 'blocks',
+    error_notebook: 'errors'
+  };
+  const storageKey = collectionKeys[collection];
+  if (!storageKey) throw new Error(`Route de démonstration non reconnue : ${pathname}`);
+  const records = data[storageKey];
   const idMatch = pathname.match(/\/(\d+)$/);
   if (method === 'GET') {
     const rows = records.map((item) => collection === 'error_notebook' ? joinError(item, data) : collection === 'study_blocks' ? joinBlock(item, data) : item);

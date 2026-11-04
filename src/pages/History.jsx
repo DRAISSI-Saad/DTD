@@ -29,6 +29,14 @@ function shiftDate(date, offset) {
   return formatLocalDate(shifted);
 }
 
+function previousMonthRange(date) {
+  const firstOfCurrentMonth = new Date(`${date.slice(0, 7)}-01T12:00:00`);
+  const lastOfPreviousMonth = new Date(firstOfCurrentMonth);
+  lastOfPreviousMonth.setDate(0);
+  const firstOfPreviousMonth = new Date(lastOfPreviousMonth.getFullYear(), lastOfPreviousMonth.getMonth(), 1, 12);
+  return { from: formatLocalDate(firstOfPreviousMonth), to: formatLocalDate(lastOfPreviousMonth) };
+}
+
 function minutes(time) {
   const [hours, mins] = String(time).split(':').map(Number);
   return hours * 60 + mins;
@@ -73,7 +81,8 @@ function assignLanes(blocks) {
 export default function History() {
   const today = formatLocalDate(new Date());
   const now = new Date();
-  const [range, setRange] = useState({ from: shiftDate(today, -6), to: today });
+  const previousMonth = previousMonthRange(today);
+  const [range, setRange] = useState(previousMonth);
   const [blocks, setBlocks] = useState([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
@@ -86,7 +95,10 @@ export default function History() {
     api(`/history/gantt?from=${encodeURIComponent(range.from)}&to=${encodeURIComponent(range.to)}`, {
       signal: controller.signal
     })
-      .then(setBlocks)
+      .then((items) => {
+        if (!Array.isArray(items)) throw new Error('Le serveur a renvoyé un historique invalide.');
+        setBlocks(items);
+      })
       .catch((requestError) => {
         if (requestError.name !== 'AbortError') setError(requestError.message);
       })
@@ -111,7 +123,7 @@ export default function History() {
     from: shiftDate(current.from, offset * 7),
     to: shiftDate(current.to, offset * 7)
   }));
-  const isCurrentWeek = range.to === today && range.from === shiftDate(today, -6);
+  const isPreviousMonth = range.from === previousMonth.from && range.to === previousMonth.to;
 
   return <>
     <PageHeader
@@ -130,7 +142,7 @@ export default function History() {
             <p className="mt-1 text-[10px] text-muted">{days.length} journée(s) avec planning</p>
           </div>
           <button className="icon-button" onClick={() => changeWeek(1)} aria-label="Période suivante" disabled={range.to >= today}>›</button>
-          {!isCurrentWeek && <button className="button-small button-skip" onClick={() => setPreset(7)}>Cette semaine</button>}
+          {!isPreviousMonth && <button className="button-small button-skip" onClick={() => setRange(previousMonth)}>Mois précédent</button>}
         </div>
         <div className="flex flex-wrap items-end gap-3">
           <label className="block">

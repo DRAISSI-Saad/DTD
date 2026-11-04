@@ -11,7 +11,12 @@ export default function Errors({ notify }) {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const load = () => Promise.all([api('/chapters?limit=100'), api('/error-notebook?limit=100'), api('/errors/due')])
-    .then(([c, e, d]) => { setChapters(c.data); setErrors(e.data); setDue(d); setForm((v) => ({ ...v, chapter_id: v.chapter_id || String(c.data[0]?.id || '') })); })
+    .then(([c, e, d]) => {
+      if (!Array.isArray(c?.data) || !Array.isArray(e?.data) || !Array.isArray(d)) {
+        throw new Error('Les données du carnet sont incomplètes. Actualise la page et réessaie.');
+      }
+      setChapters(c.data); setErrors(e.data); setDue(d); setForm((v) => ({ ...v, chapter_id: v.chapter_id || String(c.data[0]?.id || '') }));
+    })
     .catch((e) => setError(e.message)).finally(() => setLoading(false));
   useEffect(() => { load(); }, []);
   const addError = async (event) => {
