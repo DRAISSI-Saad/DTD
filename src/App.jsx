@@ -4,7 +4,7 @@ import {
   BookOpen, CalendarDays, ChartNoAxesCombined, ChartNoAxesGantt, CheckCheck, CircleAlert,
   GraduationCap, LayoutDashboard, Moon, Sun, Menu, X, ArrowUpRight, LogOut
 } from 'lucide-react';
-import { api, apiBase, clearAuthToken, getAuthToken, setAuthToken } from './api';
+import { api, apiBase, clearAuthToken, DEMO_MODE, getAuthToken, setAuthToken } from './api';
 import Login from './components/Login.jsx';
 import Dashboard from './pages/Dashboard.jsx';
 import Planning from './pages/Planning.jsx';
@@ -29,8 +29,9 @@ export default function App() {
   const [dark, setDark] = useState(() => localStorage.getItem('theme') === 'dark');
   const [toasts, setToasts] = useState([]);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [authStatus, setAuthStatus] = useState(() => getAuthToken() ? 'checking' : 'unauthenticated');
+  const [authStatus, setAuthStatus] = useState(() => DEMO_MODE ? 'authenticated' : getAuthToken() ? 'checking' : 'unauthenticated');
   const [authError, setAuthError] = useState('');
+  const [username, setUsername] = useState(() => DEMO_MODE ? 'Démo portfolio' : '');
   const location = useLocation();
 
   const notify = useCallback((message, kind = 'success') => {
@@ -45,7 +46,7 @@ export default function App() {
   }, [dark]);
 
   useEffect(() => {
-    if (authStatus !== 'checking') return undefined;
+    if (DEMO_MODE || authStatus !== 'checking') return undefined;
     const token = getAuthToken();
     if (!token) {
       setAuthStatus('unauthenticated');
@@ -53,7 +54,11 @@ export default function App() {
     }
     let active = true;
     api('/auth/me')
-      .then(() => active && setAuthStatus('authenticated'))
+      .then((user) => {
+        if (!active) return;
+        setUsername(user.username);
+        setAuthStatus('authenticated');
+      })
       .catch((error) => {
         if (!active) return;
         if (error.status === 401) {
@@ -77,7 +82,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (authStatus !== 'authenticated') return undefined;
+    if (DEMO_MODE || authStatus !== 'authenticated') return undefined;
     const controller = new AbortController();
     let retryTimer;
 
@@ -149,6 +154,7 @@ export default function App() {
         body: JSON.stringify({ username, password })
       });
       setAuthToken(result.token);
+      setUsername(result.username || username);
       setAuthStatus('authenticated');
     } catch (error) {
       setAuthError(error.message === 'Failed to fetch'
@@ -164,6 +170,7 @@ export default function App() {
       console.error(error);
     } finally {
       clearAuthToken();
+      setUsername('');
       setAuthError('');
       setAuthStatus('unauthenticated');
     }
@@ -197,7 +204,7 @@ export default function App() {
         </div>
         <div className="workspace-switcher">
           <span className="workspace-avatar"><BookOpen size={15} /></span>
-          <span className="min-w-0 flex-1"><span className="block truncate text-xs font-semibold">Espace personnel</span><span className="mt-0.5 block text-[10px] text-muted">Préparation d’examens</span></span>
+          <span className="min-w-0 flex-1"><span className="block truncate text-xs font-semibold">Espace personnel</span><span className="mt-0.5 block truncate text-[10px] text-muted">{username}</span></span>
           <ArrowUpRight size={14} className="text-slate-400" />
         </div>
         <nav className="sidebar-nav">
@@ -232,10 +239,10 @@ export default function App() {
             <button className="icon-button" onClick={() => setDark((value) => !value)} aria-label={dark ? 'Activer le thème clair' : 'Activer le thème sombre'} title={dark ? 'Activer le thème clair' : 'Activer le thème sombre'}>
               {dark ? <Sun size={17} /> : <Moon size={17} />}
             </button>
-            <button className="icon-button" onClick={handleLogout} aria-label="Se déconnecter" title="Se déconnecter">
-              <LogOut size={17} />
-            </button>
-            <span className="profile-chip" title="Espace personnel">É</span>
+            {DEMO_MODE
+              ? <span className="rounded-full bg-teal-50 px-3 py-1.5 text-[10px] font-bold tracking-wide text-primary dark:bg-teal-950">MODE DÉMO · DONNÉES LOCALES</span>
+              : <button className="icon-button" onClick={handleLogout} aria-label="Se déconnecter" title="Se déconnecter"><LogOut size={17} /></button>}
+            <span className="profile-chip" title={username}>{username.charAt(0).toUpperCase()}</span>
           </div>
         </header>
         <main className="app-content mx-auto max-w-[1440px] px-5 py-7 md:px-9 md:py-8">

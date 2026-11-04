@@ -1,4 +1,7 @@
+import { demoApi } from './demoApi';
+
 const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:3001/api').replace(/\/+$/, '');
+export const DEMO_MODE = import.meta.env.VITE_DEMO_MODE !== 'false';
 
 export function getAuthToken() {
   return sessionStorage.getItem('tdt_access_token');
@@ -13,6 +16,7 @@ export function clearAuthToken() {
 }
 
 export async function api(path, options = {}) {
+  if (DEMO_MODE) return demoApi(path, options);
   const token = getAuthToken();
   const response = await fetch(`${API_URL}${path}`, {
     ...options,
