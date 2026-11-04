@@ -63,13 +63,12 @@ export default function Login({ onLogin, onRegister, error, checking, onRetry })
                 type="password"
                 autoComplete={mode === 'register' ? 'new-password' : 'current-password'}
                 required
-                minLength={mode === 'register' ? 16 : undefined}
                 maxLength={256}
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10 dark:border-slate-700 dark:bg-slate-950"
               />
-              {mode === 'register' && <span className="mt-1 block text-xs text-muted">16 caractères minimum.</span>}
+              {mode === 'register' && <span className="mt-1 block text-xs text-muted">Choisis un mot de passe difficile à deviner.</span>}
             </label>
             {mode === 'register' && (
               <label className="block text-sm font-medium">
