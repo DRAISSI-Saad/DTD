@@ -2,9 +2,10 @@ import { useCallback, useEffect, useState } from 'react';
 import { NavLink, Route, Routes, useLocation } from 'react-router-dom';
 import {
   BookOpen, CalendarDays, ChartNoAxesCombined, ChartNoAxesGantt, CheckCheck, CircleAlert,
-  GraduationCap, LayoutDashboard, Moon, Sun, Menu, X, ArrowUpRight
+  GraduationCap, LayoutDashboard, Moon, Sun, Menu, X, ArrowUpRight, LogOut
 } from 'lucide-react';
-import { api, apiBase } from './api';
+import { api, apiBase, clearAuthToken, getAuthToken, setAuthToken } from './api';
+import Login from './components/Login.jsx';
 import Dashboard from './pages/Dashboard.jsx';
 import Planning from './pages/Planning.jsx';
 import Subjects from './pages/Subjects.jsx';
@@ -28,6 +29,8 @@ export default function App() {
   const [dark, setDark] = useState(() => localStorage.getItem('theme') === 'dark');
   const [toasts, setToasts] = useState([]);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [authStatus, setAuthStatus] = useState(() => getAuthToken() ? 'checking' : 'unauthenticated');
+  const [authError, setAuthError] = useState('');
   const location = useLocation();
 
   const notify = useCallback((message, kind = 'success') => {
@@ -42,15 +45,137 @@ export default function App() {
   }, [dark]);
 
   useEffect(() => {
-    const events = new EventSource(`${apiBase}/events`);
-    events.addEventListener('activity', (event) => {
-      const activity = JSON.parse(event.data);
-      const labels = { INSERT: 'ajouté', UPDATE: 'mis à jour', DELETE: 'supprimé' };
-      const table = activity.table_name.replaceAll('_', ' ');
-      notify(`${table} ${labels[activity.action] || 'modifié'}`);
-    });
-    return () => events.close();
-  }, [notify]);
+    if (authStatus !== 'checking') return undefined;
+    const token = getAuthToken();
+    if (!token) {
+      setAuthStatus('unauthenticated');
+      return undefined;
+    }
+    let active = true;
+    api('/auth/me')
+      .then(() => active && setAuthStatus('authenticated'))
+      .catch((error) => {
+        if (!active) return;
+        if (error.status === 401) {
+          clearAuthToken();
+          setAuthStatus('unauthenticated');
+        } else {
+          setAuthError('Impossible de joindre le serveur. Vérifie que le backend est démarré.');
+          setAuthStatus('error');
+        }
+      });
+    return () => { active = false; };
+  }, [authStatus]);
+
+  useEffect(() => {
+    const onUnauthorized = () => {
+      setAuthError('Ta session a expiré. Connecte-toi à nouveau.');
+      setAuthStatus('unauthenticated');
+    };
+    window.addEventListener('tdt:unauthorized', onUnauthorized);
+    return () => window.removeEventListener('tdt:unauthorized', onUnauthorized);
+  }, []);
+
+  useEffect(() => {
+    if (authStatus !== 'authenticated') return undefined;
+    const controller = new AbortController();
+    let retryTimer;
+
+    async function streamEvents() {
+      while (!controller.signal.aborted) {
+        try {
+          const response = await fetch(`${apiBase}/events`, {
+            headers: { Authorization: `Bearer ${getAuthToken()}`, Accept: 'text/event-stream' },
+            signal: controller.signal
+          });
+          if (response.status === 401) {
+            clearAuthToken();
+            window.dispatchEvent(new Event('tdt:unauthorized'));
+            return;
+          }
+          if (!response.ok || !response.body) throw new Error(`Flux temps réel indisponible (HTTP ${response.status}).`);
+
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder();
+          let buffer = '';
+          while (!controller.signal.aborted) {
+            const { value, done } = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true }).replace(/\r\n/g, '\n');
+            let separator;
+            while ((separator = buffer.indexOf('\n\n')) !== -1) {
+              const message = buffer.slice(0, separator);
+              buffer = buffer.slice(separator + 2);
+              const eventName = message.split('\n').find((line) => line.startsWith('event:'))?.slice(6).trim();
+              const data = message.split('\n').find((line) => line.startsWith('data:'))?.slice(5).trim();
+              if (eventName === 'activity' && data) {
+                const activity = JSON.parse(data);
+                const labels = { INSERT: 'ajouté', UPDATE: 'mis à jour', DELETE: 'supprimé' };
+                const table = activity.table_name.replaceAll('_', ' ');
+                notify(`${table} ${labels[activity.action] || 'modifié'}`);
+              }
+            }
+          }
+        } catch (error) {
+          if (controller.signal.aborted) return;
+          console.error(error);
+        }
+        await new Promise((resolve) => {
+          retryTimer = window.setTimeout(resolve, 3000);
+        });
+      }
+    }
+
+    streamEvents();
+    return () => {
+      controller.abort();
+      window.clearTimeout(retryTimer);
+    };
+  }, [authStatus, notify]);
+
+  async function handleLogin(username, password) {
+    setAuthError('');
+    try {
+      const result = await api('/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ username, password })
+      });
+      setAuthToken(result.token);
+      setAuthStatus('authenticated');
+    } catch (error) {
+      setAuthError(error.message === 'Failed to fetch'
+        ? 'Impossible de joindre le serveur. Vérifie que le backend est démarré.'
+        : error.message);
+    }
+  }
+
+  async function handleLogout() {
+    try {
+      await api('/auth/logout', { method: 'POST' });
+    } catch (error) {
+      console.error(error);
+    } finally {
+      clearAuthToken();
+      setAuthError('');
+      setAuthStatus('unauthenticated');
+    }
+  }
+
+  function retryAuth() {
+    setAuthError('');
+    if (getAuthToken()) setAuthStatus('checking');
+    else setAuthStatus('unauthenticated');
+  }
+
+  if (authStatus === 'checking') {
+    return <Login checking error="Vérification de la connexion au serveur…" onRetry={retryAuth} />;
+  }
+  if (authStatus === 'error') {
+    return <Login checking error={authError} onRetry={retryAuth} />;
+  }
+  if (authStatus === 'unauthenticated') {
+    return <Login onLogin={handleLogin} error={authError} />;
+  }
 
   const pageTitle = links.find((link) => link.to === location.pathname)?.label || 'TDT';
 
@@ -98,6 +223,9 @@ export default function App() {
             <span className="topbar-divider hidden sm:block" />
             <button className="icon-button" onClick={() => setDark((value) => !value)} aria-label={dark ? 'Activer le thème clair' : 'Activer le thème sombre'} title={dark ? 'Activer le thème clair' : 'Activer le thème sombre'}>
               {dark ? <Sun size={17} /> : <Moon size={17} />}
+            </button>
+            <button className="icon-button" onClick={handleLogout} aria-label="Se déconnecter" title="Se déconnecter">
+              <LogOut size={17} />
             </button>
             <span className="profile-chip" title="Espace personnel">É</span>
           </div>
