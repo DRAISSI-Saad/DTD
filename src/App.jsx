@@ -134,9 +134,17 @@ export default function App() {
   }, [authStatus, notify]);
 
   async function handleLogin(username, password) {
+    await authenticate(username, password, '/auth/login');
+  }
+
+  async function handleRegister(username, password) {
+    await authenticate(username, password, '/auth/register');
+  }
+
+  async function authenticate(username, password, endpoint) {
     setAuthError('');
     try {
-      const result = await api('/auth/login', {
+      const result = await api(endpoint, {
         method: 'POST',
         body: JSON.stringify({ username, password })
       });
@@ -174,7 +182,7 @@ export default function App() {
     return <Login checking error={authError} onRetry={retryAuth} />;
   }
   if (authStatus === 'unauthenticated') {
-    return <Login onLogin={handleLogin} error={authError} />;
+    return <Login onLogin={handleLogin} onRegister={handleRegister} error={authError} />;
   }
 
   const pageTitle = links.find((link) => link.to === location.pathname)?.label || 'TDT';
