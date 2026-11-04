@@ -1,4 +1,4 @@
-const STORAGE_KEY = 'tdt_portfolio_demo_data';
+const STORAGE_KEY = 'tdt_portfolio_demo_data_v2';
 
 function localDate(offset = 0) {
   const date = new Date();
@@ -8,40 +8,49 @@ function localDate(offset = 0) {
 
 function createInitialData() {
   const exams = [
-    { id: 1, title: 'Examen final', subject: 'Mathématiques', exam_date: localDate(18) },
-    { id: 2, title: 'Épreuve de fin de semestre', subject: 'Physique', exam_date: localDate(24) },
-    { id: 3, title: 'Contrôle continu', subject: 'Informatique', exam_date: localDate(12) }
+    { id: 1, title: 'Module 1', subject: 'Algorithmique et programmation', exam_date: localDate(18) },
+    { id: 2, title: 'Module 2', subject: 'Programmation orientée objet', exam_date: localDate(20) },
+    { id: 3, title: 'Module 3', subject: 'Développement web', exam_date: localDate(12) },
+    { id: 4, title: 'Module 4', subject: 'Bases de données', exam_date: localDate(24) },
+    { id: 5, title: 'Module 5', subject: 'Génie logiciel et méthodes agiles', exam_date: localDate(16) },
+    { id: 6, title: 'Module 6', subject: 'Systèmes et réseaux', exam_date: localDate(22) },
+    { id: 7, title: 'Module 7', subject: 'Mathématiques pour la science des données', exam_date: localDate(28) },
+    { id: 8, title: 'Module 8', subject: 'Statistiques et probabilités', exam_date: localDate(26) },
+    { id: 9, title: 'Module 9', subject: 'Analyse et visualisation des données', exam_date: localDate(30) }
   ];
   const chapters = [
-    { id: 1, exam_id: 1, title: 'Dérivées et applications', difficulty: 'difficile', mastery_level: 68, status: 'en_cours' },
-    { id: 2, exam_id: 1, title: 'Intégrales', difficulty: 'moyen', mastery_level: 82, status: 'en_cours' },
-    { id: 3, exam_id: 2, title: 'Mécanique du point', difficulty: 'difficile', mastery_level: 55, status: 'a_faire' },
-    { id: 4, exam_id: 2, title: 'Électricité', difficulty: 'moyen', mastery_level: 91, status: 'termine' },
-    { id: 5, exam_id: 3, title: 'Structures de données', difficulty: 'moyen', mastery_level: 76, status: 'en_cours' },
-    { id: 6, exam_id: 3, title: 'Algorithmes de tri', difficulty: 'facile', mastery_level: 88, status: 'en_cours' }
+    { id: 1, exam_id: 1, title: 'Structures de données et complexité', difficulty: 'difficile', mastery_level: 68, status: 'en_cours' },
+    { id: 2, exam_id: 2, title: 'Classes, objets et héritage', difficulty: 'moyen', mastery_level: 82, status: 'en_cours' },
+    { id: 3, exam_id: 3, title: 'Conception d’API REST', difficulty: 'difficile', mastery_level: 55, status: 'a_faire' },
+    { id: 4, exam_id: 4, title: 'Modélisation relationnelle et SQL', difficulty: 'moyen', mastery_level: 91, status: 'termine' },
+    { id: 5, exam_id: 5, title: 'Git, tests et intégration continue', difficulty: 'moyen', mastery_level: 76, status: 'en_cours' },
+    { id: 6, exam_id: 6, title: 'Systèmes d’exploitation et processus', difficulty: 'facile', mastery_level: 88, status: 'en_cours' },
+    { id: 7, exam_id: 7, title: 'Algèbre linéaire et optimisation', difficulty: 'difficile', mastery_level: 63, status: 'en_cours' },
+    { id: 8, exam_id: 8, title: 'Probabilités et statistiques descriptives', difficulty: 'moyen', mastery_level: 72, status: 'en_cours' },
+    { id: 9, exam_id: 9, title: 'Préparation et visualisation des données', difficulty: 'moyen', mastery_level: 80, status: 'en_cours' }
   ];
   const plans = [
-    { id: 1, plan_date: localDate(), objective_1: 'Revoir les règles de dérivation', objective_2: 'Résoudre une annale de physique', objective_3: 'Consolider les algorithmes de tri', evening_review: 'Bonne concentration sur les exercices. Revoir les erreurs de signe demain.' },
-    { id: 2, plan_date: localDate(-1), objective_1: 'Réviser les intégrales', objective_2: 'Faire des exercices de mécanique', objective_3: null, evening_review: '' },
-    { id: 3, plan_date: localDate(1), objective_1: 'Terminer les exercices de dérivation', objective_2: 'Revoir les erreurs du carnet', objective_3: 'Faire une pause avant la séance du soir', evening_review: '' }
+    { id: 1, plan_date: localDate(), objective_1: 'Revoir les structures de données et leur complexité', objective_2: 'Pratiquer la conception d’une API REST', objective_3: 'Consolider les bases de la statistique descriptive', evening_review: 'Bonne concentration sur les exercices. Revoir les cas limites des algorithmes demain.' },
+    { id: 2, plan_date: localDate(-1), objective_1: 'Réviser les classes et l’héritage', objective_2: 'Faire des exercices SQL', objective_3: null, evening_review: '' },
+    { id: 3, plan_date: localDate(1), objective_1: 'Terminer les exercices d’algorithmique', objective_2: 'Revoir les erreurs du carnet', objective_3: 'Préparer une visualisation de données', evening_review: '' }
   ];
   const blocks = [
     { id: 1, plan_id: 1, chapter_id: 1, start_time: '09:00:00', end_time: '09:50:00', block_type: 'cours', status: 'fait', notes: 'Revoir les règles et les exemples clés.' },
     { id: 2, plan_id: 1, chapter_id: 1, start_time: '09:50:00', end_time: '10:00:00', block_type: 'pause', status: 'prevu', notes: 'Pause de 10 minutes' },
     { id: 3, plan_id: 1, chapter_id: 1, start_time: '10:00:00', end_time: '10:50:00', block_type: 'exercice', status: 'prevu', notes: 'Applications et exercices ciblés.' },
-    { id: 4, plan_id: 1, chapter_id: 2, start_time: '11:00:00', end_time: '11:50:00', block_type: 'fiche', status: 'prevu', notes: 'Créer une fiche de synthèse.' },
+    { id: 4, plan_id: 1, chapter_id: 7, start_time: '11:00:00', end_time: '11:50:00', block_type: 'fiche', status: 'prevu', notes: 'Créer une fiche de synthèse.' },
     { id: 5, plan_id: 1, chapter_id: null, start_time: '12:19:00', end_time: '12:39:00', block_type: 'pause', status: 'prevu', notes: 'Pause prière · Dhuhr' },
-    { id: 6, plan_id: 1, chapter_id: 3, start_time: '14:00:00', end_time: '14:50:00', block_type: 'annale', status: 'prevu', notes: 'Annale en conditions réelles.' },
-    { id: 7, plan_id: 1, chapter_id: 3, start_time: '15:34:00', end_time: '16:24:00', block_type: 'annale', status: 'prevu', notes: 'Correction et reprise des points difficiles.' },
-    { id: 8, plan_id: 1, chapter_id: 6, start_time: '19:16:00', end_time: '20:06:00', block_type: 'revision', status: 'prevu', notes: 'Révision légère et rappel actif.' },
-    { id: 9, plan_id: 2, chapter_id: 2, start_time: '09:00:00', end_time: '09:50:00', block_type: 'cours', status: 'fait', notes: 'Revoir les primitives usuelles.' },
-    { id: 10, plan_id: 2, chapter_id: 4, start_time: '14:00:00', end_time: '14:50:00', block_type: 'exercice', status: 'fait', notes: 'Série d’exercices corrigés.' },
-    { id: 11, plan_id: 2, chapter_id: 5, start_time: '16:00:00', end_time: '16:50:00', block_type: 'fiche', status: 'saute', notes: 'Fiche de révision.' }
+    { id: 6, plan_id: 1, chapter_id: 8, start_time: '14:00:00', end_time: '14:50:00', block_type: 'annale', status: 'prevu', notes: 'Annale en conditions réelles.' },
+    { id: 7, plan_id: 1, chapter_id: 8, start_time: '15:34:00', end_time: '16:24:00', block_type: 'annale', status: 'prevu', notes: 'Correction et reprise des points difficiles.' },
+    { id: 8, plan_id: 1, chapter_id: 9, start_time: '19:16:00', end_time: '20:06:00', block_type: 'revision', status: 'prevu', notes: 'Révision légère et rappel actif.' },
+    { id: 9, plan_id: 2, chapter_id: 2, start_time: '09:00:00', end_time: '09:50:00', block_type: 'cours', status: 'fait', notes: 'Revoir les principes de la programmation objet.' },
+    { id: 10, plan_id: 2, chapter_id: 4, start_time: '14:00:00', end_time: '14:50:00', block_type: 'exercice', status: 'fait', notes: 'Série de requêtes SQL corrigées.' },
+    { id: 11, plan_id: 2, chapter_id: 5, start_time: '16:00:00', end_time: '16:50:00', block_type: 'fiche', status: 'saute', notes: 'Fiche de révision sur Git et les tests.' }
   ];
   const errors = [
-    { id: 1, chapter_id: 1, error_description: 'Confusion entre la dérivée d’un produit et celle d’une somme.', correction: 'Appliquer (uv)′ = u′v + uv′ et identifier chaque facteur avant de dériver.', review_count: 0, next_review_date: localDate(), created_at: new Date().toISOString() },
-    { id: 2, chapter_id: 3, error_description: 'Oubli de convertir les unités avant le calcul de la vitesse.', correction: 'Vérifier les unités SI et les conversions avant de remplacer les valeurs.', review_count: 1, next_review_date: localDate(2), created_at: new Date().toISOString() },
-    { id: 3, chapter_id: 5, error_description: 'Mauvaise mise à jour des indices dans une boucle de tri.', correction: 'Tracer les indices sur un petit exemple avant de généraliser.', review_count: 2, next_review_date: localDate(-1), created_at: new Date().toISOString() }
+    { id: 1, chapter_id: 1, error_description: 'Oubli de traiter le cas d’une collection vide dans un algorithme.', correction: 'Lister les cas limites avant de coder : entrée vide, un élément et doublons.', review_count: 0, next_review_date: localDate(), created_at: new Date().toISOString() },
+    { id: 2, chapter_id: 8, error_description: 'Interprétation incorrecte de la moyenne en présence de valeurs extrêmes.', correction: 'Comparer moyenne et médiane, puis examiner la dispersion et les valeurs atypiques.', review_count: 1, next_review_date: localDate(2), created_at: new Date().toISOString() },
+    { id: 3, chapter_id: 9, error_description: 'Graphique difficile à lire à cause d’axes et d’unités manquants.', correction: 'Ajouter un titre, des libellés, les unités et choisir une échelle adaptée.', review_count: 2, next_review_date: localDate(-1), created_at: new Date().toISOString() }
   ];
   return { exams, chapters, plans, blocks, errors };
 }
